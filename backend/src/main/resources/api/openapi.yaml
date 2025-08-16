@@ -1,0 +1,715 @@
+openapi: 3.0.3
+info:
+  title: Billiard Club Management API
+  description: API for managing billiard clubs, tables, bookings, orders, and billing
+  version: 1.0.0
+  contact:
+    name: ACME Bida Team
+    email: support@acme-bida.com
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.acme-bida.com/api/v1
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Authentication
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # Companies (Multi-tenant)
+  /companies:
+    get:
+      tags:
+        - Companies
+      summary: Get companies (admin only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Company'
+    post:
+      tags:
+        - Companies
+      summary: Create new company
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCompanyRequest'
+      responses:
+        '201':
+          description: Company created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+
+  # Clubs
+  /companies/{companyId}/clubs:
+    get:
+      tags:
+        - Clubs
+      summary: Get clubs for company
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of clubs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Club'
+    post:
+      tags:
+        - Clubs
+      summary: Create new club
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateClubRequest'
+      responses:
+        '201':
+          description: Club created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Club'
+
+  # Tables
+  /clubs/{clubId}/tables:
+    get:
+      tags:
+        - Tables
+      summary: Get tables for club
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TableStatus'
+      responses:
+        '200':
+          description: List of tables
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Table'
+    post:
+      tags:
+        - Tables
+      summary: Create new table
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTableRequest'
+      responses:
+        '201':
+          description: Table created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+
+  /tables/{tableId}:
+    get:
+      tags:
+        - Tables
+      summary: Get table details
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Table details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+    put:
+      tags:
+        - Tables
+      summary: Update table
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTableRequest'
+      responses:
+        '200':
+          description: Table updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+
+  # Bookings
+  /tables/{tableId}/bookings:
+    get:
+      tags:
+        - Bookings
+      summary: Get bookings for table
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+    post:
+      tags:
+        - Bookings
+      summary: Create booking
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+
+  # Orders
+  /tables/{tableId}/orders:
+    get:
+      tags:
+        - Orders
+      summary: Get orders for table
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+    post:
+      tags:
+        - Orders
+      summary: Create order
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+  # Billing
+  /tables/{tableId}/bills:
+    get:
+      tags:
+        - Billing
+      summary: Get bills for table
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/BillStatus'
+      responses:
+        '200':
+          description: List of bills
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Bill'
+    post:
+      tags:
+        - Billing
+      summary: Create bill
+      parameters:
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBillRequest'
+      responses:
+        '201':
+          description: Bill created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bill'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Authentication
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+        user:
+          $ref: '#/components/schemas/User'
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    # Users
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        companyId:
+          type: integer
+        clubId:
+          type: integer
+
+    UserRole:
+      type: string
+      enum: [OWNER, CLUB_MANAGER, STAFF, CUSTOMER]
+
+    # Companies
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateCompanyRequest:
+      type: object
+      required:
+        - name
+        - address
+        - phone
+        - email
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+
+    # Clubs
+    Club:
+      type: object
+      properties:
+        id:
+          type: integer
+        companyId:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        openingHours:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateClubRequest:
+      type: object
+      required:
+        - name
+        - address
+        - phone
+        - email
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        openingHours:
+          type: string
+
+    # Tables
+    Table:
+      type: object
+      properties:
+        id:
+          type: integer
+        clubId:
+          type: integer
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/TableType'
+        status:
+          $ref: '#/components/schemas/TableStatus'
+        hourlyRate:
+          type: number
+        currentBooking:
+          $ref: '#/components/schemas/Booking'
+        createdAt:
+          type: string
+          format: date-time
+
+    TableType:
+      type: string
+      enum: [POOL_8_BALL, POOL_9_BALL, SNOOKER, CAROM]
+
+    TableStatus:
+      type: string
+      enum: [AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED]
+
+    CreateTableRequest:
+      type: object
+      required:
+        - name
+        - type
+        - hourlyRate
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/TableType'
+        hourlyRate:
+          type: number
+
+    UpdateTableRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/TableType'
+        status:
+          $ref: '#/components/schemas/TableStatus'
+        hourlyRate:
+          type: number
+
+    # Bookings
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+        tableId:
+          type: integer
+        userId:
+          type: integer
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    BookingStatus:
+      type: string
+      enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+
+    CreateBookingRequest:
+      type: object
+      required:
+        - startTime
+        - endTime
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+
+    # Orders
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        tableId:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        totalAmount:
+          type: number
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        createdAt:
+          type: string
+          format: date-time
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        productId:
+          type: integer
+        productName:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        totalPrice:
+          type: number
+
+    OrderStatus:
+      type: string
+      enum: [PENDING, PREPARING, READY, DELIVERED, CANCELLED]
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: integer
+              quantity:
+                type: integer
+
+    # Billing
+    Bill:
+      type: object
+      properties:
+        id:
+          type: integer
+        tableId:
+          type: integer
+        bookingId:
+          type: integer
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        tableFee:
+          type: number
+        totalAmount:
+          type: number
+        status:
+          $ref: '#/components/schemas/BillStatus'
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
+        createdAt:
+          type: string
+          format: date-time
+
+    BillStatus:
+      type: string
+      enum: [PENDING, PAID, CANCELLED]
+
+    PaymentMethod:
+      type: string
+      enum: [CASH, MOMO, ZALOPAY, BANK_TRANSFER]
+
+    CreateBillRequest:
+      type: object
+      required:
+        - bookingId
+        - paymentMethod
+      properties:
+        bookingId:
+          type: integer
+        paymentMethod:
+          $ref: '#/components/schemas/PaymentMethod'
