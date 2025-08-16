@@ -142,6 +142,10 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
+# Docker
+.dockerignore
+docker-compose.override.yml
+
 # Database
 *.db
 *.sqlite
