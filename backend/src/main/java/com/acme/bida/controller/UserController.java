@@ -2,6 +2,7 @@ package com.acme.bida.controller;
 
 import com.acme.bida.domain.entity.User;
 import com.acme.bida.repository.UserRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -33,13 +34,36 @@ public class UserController {
     }
     
     @PostMapping("/create")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        // Hash the password
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-        user.setPasswordHash(user.getPasswordHash()); // This is the hashed password
-        
-        User savedUser = userRepository.save(user);
-        return ResponseEntity.ok(savedUser);
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+        try {
+            // Check if username already exists
+            if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Check if email already exists
+            if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Hash the password properly
+            String hashedPassword = passwordEncoder.encode(user.getPasswordHash());
+            user.setPasswordHash(hashedPassword);
+            
+            // Set default values
+            if (user.getIsActive() == null) {
+                user.setIsActive(true);
+            }
+            if (user.getRole() == null) {
+                user.setRole(User.UserRole.CUSTOMER);
+            }
+            
+            User savedUser = userRepository.save(user);
+            return ResponseEntity.ok(savedUser);
+        } catch (Exception e) {
+            log.error("Error creating user: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
     
     @GetMapping("/test/password")
