@@ -40,17 +40,25 @@ test_endpoint() {
     local expected_status=$3
     local description=$4
     local data=$5
+    local auth_header=$6
     
     echo -n "Testing $method $endpoint... "
     
+    # Build curl command with optional authorization header
+    local curl_cmd="curl -s -w \"%{http_code}\" -o /tmp/response.json"
+    
+    if [ -n "$auth_header" ]; then
+        curl_cmd="$curl_cmd -H \"$auth_header\""
+    fi
+    
     if [ "$method" = "GET" ]; then
-        response=$(curl -s -w "%{http_code}" -o /tmp/response.json "$BASE_URL$endpoint")
+        response=$(eval "$curl_cmd \"$BASE_URL$endpoint\"")
     elif [ "$method" = "POST" ]; then
-        response=$(curl -s -w "%{http_code}" -o /tmp/response.json -X POST -H "Content-Type: application/json" -d "$data" "$BASE_URL$endpoint")
+        response=$(eval "$curl_cmd -X POST -H \"Content-Type: application/json\" -d \"$data\" \"$BASE_URL$endpoint\"")
     elif [ "$method" = "PUT" ]; then
-        response=$(curl -s -w "%{http_code}" -o /tmp/response.json -X PUT -H "Content-Type: application/json" -d "$data" "$BASE_URL$endpoint")
+        response=$(eval "$curl_cmd -X PUT -H \"Content-Type: application/json\" -d \"$data\" \"$BASE_URL$endpoint\"")
     elif [ "$method" = "DELETE" ]; then
-        response=$(curl -s -w "%{http_code}" -o /tmp/response.json -X DELETE "$BASE_URL$endpoint")
+        response=$(eval "$curl_cmd -X DELETE \"$BASE_URL$endpoint\"")
     fi
     
     http_code="${response: -3}"
@@ -90,8 +98,8 @@ http_code="${response: -3}"
 
 if [ "$http_code" = "200" ]; then
     print_status "PASS" "Login successful (Status: $http_code)"
-    JWT_TOKEN=$(cat /tmp/login_response.json | grep -o '"accessToken":"[^"]*"' | cut -d'"' -f4)
-    if [ -n "$JWT_TOKEN" ]; then
+    JWT_TOKEN=$(cat /tmp/login_response.json | jq -r '.accessToken')
+    if [ -n "$JWT_TOKEN" ] && [ "$JWT_TOKEN" != "null" ]; then
         print_status "INFO" "JWT Token obtained: ${JWT_TOKEN:0:20}..."
     else
         print_status "WARN" "JWT Token not found in response"
