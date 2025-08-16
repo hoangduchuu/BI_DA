@@ -1,11 +1,39 @@
 openapi: 3.0.3
 info:
   title: Billiard Club Management API
-  description: API for managing billiard clubs, tables, bookings, orders, and billing
+  description: |
+    Comprehensive API for managing billiard clubs, tables, bookings, orders, and billing.
+    
+    ## Features
+    - **Multi-tenant Architecture**: Support for multiple companies and clubs
+    - **User Management**: Role-based access control (ADMIN, CLUB_MANAGER, STAFF, CUSTOMER)
+    - **Table Management**: Pool tables, snooker, carom with real-time status
+    - **Booking System**: Table reservations with time slots
+    - **Order Management**: Food, beverages, and services ordering
+    - **Billing System**: Integrated billing with multiple payment methods
+    - **JWT Authentication**: Secure token-based authentication
+    
+    ## Authentication
+    All protected endpoints require a valid JWT token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+    
+    ## Multi-tenancy
+    The system supports multi-tenancy through company_id and club_id fields.
+    Users are associated with specific companies and clubs based on their role.
+    
+    ## Rate Limiting
+    API endpoints are rate-limited to ensure fair usage.
+    
   version: 1.0.0
   contact:
     name: ACME Bida Team
     email: support@acme-bida.com
+    url: https://acme-bida.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: http://localhost:8080/api/v1
@@ -17,53 +45,113 @@ security:
   - BearerAuth: []
 
 paths:
+  # Health Check
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check
+      description: Check if the API is running and healthy
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: API is unhealthy
+
   # Authentication
   /auth/login:
     post:
       tags:
         - Authentication
       summary: User login
+      description: Authenticate user and return JWT tokens
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: "admin"
+              password: "password123"
       responses:
         '200':
           description: Login successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                $ref: '#/components/schemas/LoginResponse'
+            example:
+              accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              refreshToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              tokenType: "Bearer"
+              expiresIn: 86400
+              userInfo:
+                id: 1
+                username: "admin"
+                email: "admin@acme-bida.com"
+                role: "ADMIN"
+                companyId: 1
+                clubId: null
         '401':
           description: Invalid credentials
-
-  /auth/refresh:
-    post:
-      tags:
-        - Authentication
-      summary: Refresh access token
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshTokenRequest'
-      responses:
-        '200':
-          description: Token refreshed successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/health:
+    get:
+      tags:
+        - Authentication
+      summary: Auth service health check
+      description: Check if the authentication service is running
+      responses:
+        '200':
+          description: Auth service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Auth service is running"
+
+  /auth/debug/users:
+    get:
+      tags:
+        - Debug
+      summary: Get all users (Debug endpoint)
+      description: Retrieve all users in the system (for debugging purposes)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
 
   # Companies (Multi-tenant)
   /companies:
     get:
       tags:
         - Companies
-      summary: Get companies (admin only)
+      summary: Get all companies
+      description: Retrieve all companies in the system
       security:
         - BearerAuth: []
       responses:
@@ -75,10 +163,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Company'
+            example:
+              - id: 1
+                name: "ACME Billiard Group"
+                address: "123 Main Street, Ho Chi Minh City"
+                phone: "+84 28 1234 5678"
+                email: "info@acme-bida.com"
+                createdAt: "2025-08-16T10:00:00Z"
+                updatedAt: "2025-08-16T10:00:00Z"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
+
     post:
       tags:
         - Companies
       summary: Create new company
+      description: Create a new company in the system
       security:
         - BearerAuth: []
       requestBody:
@@ -87,297 +189,286 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateCompanyRequest'
+            example:
+              name: "New Billiard Company"
+              address: "456 Business District, Ho Chi Minh City"
+              phone: "+84 28 8765 4321"
+              email: "contact@newbida.com"
       responses:
-        '201':
+        '200':
           description: Company created successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Company'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden - Insufficient permissions
 
-  # Clubs
-  /companies/{companyId}/clubs:
+  /companies/{id}:
     get:
       tags:
-        - Clubs
-      summary: Get clubs for company
+        - Companies
+      summary: Get company by ID
+      description: Retrieve a specific company by its ID
+      security:
+        - BearerAuth: []
       parameters:
-        - name: companyId
+        - name: id
           in: path
           required: true
+          description: Company ID
           schema:
             type: integer
+            format: int64
+            example: 1
       responses:
         '200':
-          description: List of clubs
+          description: Company details
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Club'
-    post:
-      tags:
-        - Clubs
-      summary: Create new club
-      parameters:
-        - name: companyId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateClubRequest'
-      responses:
-        '201':
-          description: Club created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Club'
+                $ref: '#/components/schemas/Company'
+        '404':
+          description: Company not found
+        '401':
+          description: Unauthorized
 
-  # Tables
-  /clubs/{clubId}/tables:
-    get:
-      tags:
-        - Tables
-      summary: Get tables for club
-      parameters:
-        - name: clubId
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/TableStatus'
-      responses:
-        '200':
-          description: List of tables
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Table'
-    post:
-      tags:
-        - Tables
-      summary: Create new table
-      parameters:
-        - name: clubId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateTableRequest'
-      responses:
-        '201':
-          description: Table created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Table'
-
-  /tables/{tableId}:
-    get:
-      tags:
-        - Tables
-      summary: Get table details
-      parameters:
-        - name: tableId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: Table details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Table'
     put:
       tags:
-        - Tables
-      summary: Update table
+        - Companies
+      summary: Update company
+      description: Update an existing company
+      security:
+        - BearerAuth: []
       parameters:
-        - name: tableId
+        - name: id
           in: path
           required: true
+          description: Company ID
           schema:
             type: integer
+            format: int64
+            example: 1
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateTableRequest'
+              $ref: '#/components/schemas/UpdateCompanyRequest'
       responses:
         '200':
-          description: Table updated successfully
+          description: Company updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Table'
+                $ref: '#/components/schemas/Company'
+        '404':
+          description: Company not found
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
 
-  # Bookings
-  /tables/{tableId}/bookings:
-    get:
+    delete:
       tags:
-        - Bookings
-      summary: Get bookings for table
+        - Companies
+      summary: Delete company
+      description: Delete a company from the system
+      security:
+        - BearerAuth: []
       parameters:
-        - name: tableId
+        - name: id
           in: path
           required: true
+          description: Company ID
           schema:
             type: integer
-        - name: date
-          in: query
+            format: int64
+            example: 1
+      responses:
+        '204':
+          description: Company deleted successfully
+        '404':
+          description: Company not found
+        '401':
+          description: Unauthorized
+
+  # Users
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Retrieve all users in the system
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+  /users/{username}:
+    get:
+      tags:
+        - Users
+      summary: Get user by username
+      description: Retrieve a specific user by username
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          description: Username
           schema:
             type: string
-            format: date
+            example: "admin"
       responses:
         '200':
-          description: List of bookings
+          description: User details
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Booking'
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /users/create:
     post:
       tags:
-        - Bookings
-      summary: Create booking
-      parameters:
-        - name: tableId
-          in: path
-          required: true
-          schema:
-            type: integer
+        - Users
+      summary: Create new user
+      description: Create a new user in the system
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateBookingRequest'
+              $ref: '#/components/schemas/CreateUserRequest'
       responses:
-        '201':
-          description: Booking created successfully
+        '200':
+          description: User created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Booking'
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
 
-  # Orders
-  /tables/{tableId}/orders:
+  /users/test/password:
     get:
       tags:
-        - Orders
-      summary: Get orders for table
+        - Debug
+      summary: Test password matching
+      description: Test if a raw password matches the stored hash for a user
+      security:
+        - BearerAuth: []
       parameters:
-        - name: tableId
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: status
+        - name: rawPassword
           in: query
+          required: true
+          description: Raw password to test
           schema:
-            $ref: '#/components/schemas/OrderStatus'
+            type: string
+            example: "password123"
+        - name: username
+          in: query
+          required: true
+          description: Username to test against
+          schema:
+            type: string
+            example: "admin"
       responses:
         '200':
-          description: List of orders
+          description: Password test result
           content:
-            application/json:
+            text/plain:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Order'
-    post:
-      tags:
-        - Orders
-      summary: Create order
-      parameters:
-        - name: tableId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateOrderRequest'
-      responses:
-        '201':
-          description: Order created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Order'
+                type: string
+                example: "Password matches for admin: true\nStored hash: $2a$10$..."
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
 
-  # Billing
-  /tables/{tableId}/bills:
+  /users/test/hash:
     get:
       tags:
-        - Billing
-      summary: Get bills for table
+        - Debug
+      summary: Generate password hash
+      description: Generate a BCrypt hash for a given password
+      security:
+        - BearerAuth: []
       parameters:
-        - name: tableId
-          in: path
-          required: true
-          schema:
-            type: integer
-        - name: status
+        - name: rawPassword
           in: query
+          required: true
+          description: Raw password to hash
           schema:
-            $ref: '#/components/schemas/BillStatus'
+            type: string
+            example: "password123"
       responses:
         '200':
-          description: List of bills
+          description: Generated hash
           content:
-            application/json:
+            text/plain:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Bill'
-    post:
+                type: string
+                example: "$2a$10$ODnJVZ4gqnJP9vPYwkHFFu39gO9S6D78o49j3DAL7vdaanOJBJ3cK"
+        '401':
+          description: Unauthorized
+
+  # Simple Test Endpoints
+  /simple/test:
+    get:
       tags:
-        - Billing
-      summary: Create bill
-      parameters:
-        - name: tableId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateBillRequest'
+        - Debug
+      summary: Simple test endpoint
+      description: Simple endpoint to test basic functionality
       responses:
-        '201':
-          description: Bill created successfully
+        '200':
+          description: Test successful
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: '#/components/schemas/Bill'
+                type: string
+                example: "Simple test endpoint working!"
+
+  /simple/health:
+    get:
+      tags:
+        - Debug
+      summary: Simple health check
+      description: Simple health check endpoint
+      responses:
+        '200':
+          description: Health check successful
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Simple health check working!"
 
 components:
   securitySchemes:
@@ -385,6 +476,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from /auth/login endpoint
 
   schemas:
     # Authentication
@@ -396,49 +488,68 @@ components:
       properties:
         username:
           type: string
+          description: User's username
+          example: "admin"
         password:
           type: string
+          description: User's password
+          example: "password123"
+          format: password
 
-    AuthResponse:
+    LoginResponse:
       type: object
       properties:
         accessToken:
           type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         refreshToken:
           type: string
+          description: JWT refresh token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        tokenType:
+          type: string
+          description: Token type
+          example: "Bearer"
         expiresIn:
           type: integer
-        user:
-          $ref: '#/components/schemas/User'
+          description: Token expiration time in seconds
+          example: 86400
+        userInfo:
+          $ref: '#/components/schemas/UserInfo'
 
-    RefreshTokenRequest:
-      type: object
-      required:
-        - refreshToken
-      properties:
-        refreshToken:
-          type: string
-
-    # Users
-    User:
+    UserInfo:
       type: object
       properties:
         id:
           type: integer
+          format: int64
+          description: User ID
+          example: 1
         username:
           type: string
+          description: Username
+          example: "admin"
         email:
           type: string
+          description: User's email
+          example: "admin@acme-bida.com"
         role:
-          $ref: '#/components/schemas/UserRole'
+          type: string
+          description: User's role
+          enum: [ADMIN, CLUB_MANAGER, STAFF, CUSTOMER]
+          example: "ADMIN"
         companyId:
           type: integer
+          format: int64
+          description: Associated company ID
+          example: 1
         clubId:
           type: integer
-
-    UserRole:
-      type: string
-      enum: [OWNER, CLUB_MANAGER, STAFF, CUSTOMER]
+          format: int64
+          description: Associated club ID
+          nullable: true
+          example: null
 
     # Companies
     Company:
@@ -446,270 +557,224 @@ components:
       properties:
         id:
           type: integer
+          format: int64
+          description: Company ID
+          example: 1
         name:
           type: string
+          description: Company name
+          example: "ACME Billiard Group"
         address:
           type: string
+          description: Company address
+          example: "123 Main Street, Ho Chi Minh City"
         phone:
           type: string
+          description: Company phone number
+          example: "+84 28 1234 5678"
         email:
           type: string
+          description: Company email
+          example: "info@acme-bida.com"
         createdAt:
           type: string
           format: date-time
+          description: Creation timestamp
+          example: "2025-08-16T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2025-08-16T10:00:00Z"
 
     CreateCompanyRequest:
       type: object
       required:
         - name
-        - address
-        - phone
-        - email
       properties:
         name:
           type: string
+          description: Company name
+          example: "New Billiard Company"
         address:
           type: string
+          description: Company address
+          example: "456 Business District, Ho Chi Minh City"
         phone:
           type: string
+          description: Company phone number
+          example: "+84 28 8765 4321"
         email:
           type: string
+          description: Company email
+          example: "contact@newbida.com"
 
-    # Clubs
-    Club:
+    UpdateCompanyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company name
+          example: "Updated Billiard Company"
+        address:
+          type: string
+          description: Company address
+          example: "789 New Address, Ho Chi Minh City"
+        phone:
+          type: string
+          description: Company phone number
+          example: "+84 28 9999 8888"
+        email:
+          type: string
+          description: Company email
+          example: "updated@newbida.com"
+
+    # Users
+    User:
       type: object
       properties:
         id:
           type: integer
+          format: int64
+          description: User ID
+          example: 1
+        username:
+          type: string
+          description: Username
+          example: "admin"
+        email:
+          type: string
+          description: User's email
+          example: "admin@acme-bida.com"
+        passwordHash:
+          type: string
+          description: Hashed password (not returned in responses)
+          example: "$2a$10$..."
+        role:
+          type: string
+          description: User's role
+          enum: [ADMIN, CLUB_MANAGER, STAFF, CUSTOMER]
+          example: "ADMIN"
         companyId:
           type: integer
-        name:
-          type: string
-        address:
-          type: string
-        phone:
-          type: string
-        email:
-          type: string
-        openingHours:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    CreateClubRequest:
-      type: object
-      required:
-        - name
-        - address
-        - phone
-        - email
-      properties:
-        name:
-          type: string
-        address:
-          type: string
-        phone:
-          type: string
-        email:
-          type: string
-        openingHours:
-          type: string
-
-    # Tables
-    Table:
-      type: object
-      properties:
-        id:
-          type: integer
+          format: int64
+          description: Associated company ID
+          example: 1
         clubId:
           type: integer
-        name:
-          type: string
-        type:
-          $ref: '#/components/schemas/TableType'
-        status:
-          $ref: '#/components/schemas/TableStatus'
-        hourlyRate:
-          type: number
-        currentBooking:
-          $ref: '#/components/schemas/Booking'
+          format: int64
+          description: Associated club ID
+          nullable: true
+          example: null
+        isActive:
+          type: boolean
+          description: Whether the user account is active
+          example: true
         createdAt:
           type: string
           format: date-time
+          description: Creation timestamp
+          example: "2025-08-16T10:00:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2025-08-16T10:00:00Z"
 
-    TableType:
-      type: string
-      enum: [POOL_8_BALL, POOL_9_BALL, SNOOKER, CAROM]
-
-    TableStatus:
-      type: string
-      enum: [AVAILABLE, OCCUPIED, MAINTENANCE, RESERVED]
-
-    CreateTableRequest:
+    CreateUserRequest:
       type: object
       required:
-        - name
-        - type
-        - hourlyRate
+        - username
+        - email
+        - passwordHash
+        - role
       properties:
-        name:
+        username:
           type: string
-        type:
-          $ref: '#/components/schemas/TableType'
-        hourlyRate:
-          type: number
+          description: Username
+          example: "newuser"
+        email:
+          type: string
+          description: User's email
+          example: "newuser@acme-bida.com"
+        passwordHash:
+          type: string
+          description: Password (will be hashed)
+          example: "password123"
+        role:
+          type: string
+          description: User's role
+          enum: [ADMIN, CLUB_MANAGER, STAFF, CUSTOMER]
+          example: "STAFF"
+        companyId:
+          type: integer
+          format: int64
+          description: Associated company ID
+          example: 1
+        clubId:
+          type: integer
+          format: int64
+          description: Associated club ID
+          nullable: true
+          example: null
 
-    UpdateTableRequest:
+    # System
+    HealthResponse:
       type: object
       properties:
-        name:
+        service:
           type: string
-        type:
-          $ref: '#/components/schemas/TableType'
+          description: Service name
+          example: "Bida Club Management API"
+        version:
+          type: string
+          description: API version
+          example: "1.0.0"
         status:
-          $ref: '#/components/schemas/TableStatus'
-        hourlyRate:
-          type: number
+          type: string
+          description: Service status
+          enum: [UP, DOWN]
+          example: "UP"
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+          example: "2025-08-16T16:08:59.387357344"
 
-    # Bookings
-    Booking:
+    # Error Responses
+    ErrorResponse:
       type: object
       properties:
-        id:
-          type: integer
-        tableId:
-          type: integer
-        userId:
-          type: integer
-        startTime:
+        timestamp:
           type: string
           format: date-time
-        endTime:
-          type: string
-          format: date-time
+          description: Error timestamp
+          example: "2025-08-16T16:08:59.387357344"
         status:
-          $ref: '#/components/schemas/BookingStatus'
-        createdAt:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
           type: string
-          format: date-time
-
-    BookingStatus:
-      type: string
-      enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
-
-    CreateBookingRequest:
-      type: object
-      required:
-        - startTime
-        - endTime
-      properties:
-        startTime:
+          description: Error type
+          example: "Bad Request"
+        message:
           type: string
-          format: date-time
-        endTime:
+          description: Error message
+          example: "Invalid request data"
+        path:
           type: string
-          format: date-time
+          description: Request path
+          example: "/api/v1/auth/login"
 
-    # Orders
-    Order:
-      type: object
-      properties:
-        id:
-          type: integer
-        tableId:
-          type: integer
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/OrderItem'
-        totalAmount:
-          type: number
-        status:
-          $ref: '#/components/schemas/OrderStatus'
-        createdAt:
-          type: string
-          format: date-time
-
-    OrderItem:
-      type: object
-      properties:
-        id:
-          type: integer
-        productId:
-          type: integer
-        productName:
-          type: string
-        quantity:
-          type: integer
-        unitPrice:
-          type: number
-        totalPrice:
-          type: number
-
-    OrderStatus:
-      type: string
-      enum: [PENDING, PREPARING, READY, DELIVERED, CANCELLED]
-
-    CreateOrderRequest:
-      type: object
-      required:
-        - items
-      properties:
-        items:
-          type: array
-          items:
-            type: object
-            required:
-              - productId
-              - quantity
-            properties:
-              productId:
-                type: integer
-              quantity:
-                type: integer
-
-    # Billing
-    Bill:
-      type: object
-      properties:
-        id:
-          type: integer
-        tableId:
-          type: integer
-        bookingId:
-          type: integer
-        orders:
-          type: array
-          items:
-            $ref: '#/components/schemas/Order'
-        tableFee:
-          type: number
-        totalAmount:
-          type: number
-        status:
-          $ref: '#/components/schemas/BillStatus'
-        paymentMethod:
-          $ref: '#/components/schemas/PaymentMethod'
-        createdAt:
-          type: string
-          format: date-time
-
-    BillStatus:
-      type: string
-      enum: [PENDING, PAID, CANCELLED]
-
-    PaymentMethod:
-      type: string
-      enum: [CASH, MOMO, ZALOPAY, BANK_TRANSFER]
-
-    CreateBillRequest:
-      type: object
-      required:
-        - bookingId
-        - paymentMethod
-      properties:
-        bookingId:
-          type: integer
-        paymentMethod:
-          $ref: '#/components/schemas/PaymentMethod'
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Companies
+    description: Company management endpoints
+  - name: Users
+    description: User management endpoints
+  - name: System
+    description: System health and status endpoints
+  - name: Debug
+    description: Debug and testing endpoints

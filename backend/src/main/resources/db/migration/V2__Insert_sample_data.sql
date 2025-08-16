@@ -53,27 +53,4 @@ INSERT INTO products (club_id, name, description, category, price, is_available)
 (1, 'Chalk', 'Pool chalk', 'OTHER', 10000, true)
 ON CONFLICT DO NOTHING;
 
--- Insert sample booking
-INSERT INTO bookings (table_id, user_id, start_time, end_time, status) VALUES 
-(1, 4, CURRENT_TIMESTAMP + INTERVAL '1 hour', CURRENT_TIMESTAMP + INTERVAL '3 hours', 'CONFIRMED')
-ON CONFLICT DO NOTHING;
-
--- Insert sample order
-INSERT INTO orders (table_id, user_id, status, total_amount) VALUES 
-(1, 4, 'PENDING', 45000)
-ON CONFLICT DO NOTHING;
-
--- Insert sample order items
-INSERT INTO order_items (order_id, product_id, quantity, unit_price, total_price) VALUES 
-(1, 1, 2, 15000, 30000),
-(1, 11, 1, 15000, 15000)
-ON CONFLICT DO NOTHING;
-
--- Insert sample bill
-INSERT INTO bills (table_id, booking_id, user_id, table_fee, total_amount, status, payment_method) VALUES 
-(1, 1, 4, 300000, 345000, 'PENDING', 'CASH')
-ON CONFLICT DO NOTHING;
-
--- Link bill to order
-INSERT INTO bill_orders (bill_id, order_id) VALUES (1, 1)
-ON CONFLICT DO NOTHING;
+-- Note: Bookings, orders, and bills will be inserted in V3 migration after all tables and users are created

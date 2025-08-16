@@ -63,29 +63,29 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-// OpenAPI Code Generation
-openApiGenerate {
-    generatorName.set("spring")
-    inputSpec.set("$projectDir/src/main/resources/api/openapi.yaml")
-    outputDir.set("$buildDir/generated-sources/openapi")
-    apiPackage.set("com.acme.bida.api")
-    modelPackage.set("com.acme.bida.model")
-    configOptions.set(mapOf(
-        "interfaceOnly" to "true",
-        "useSpringBoot3" to "true",
-        "useTags" to "true",
-        "openApiNullable" to "false"
-    ))
-}
+// OpenAPI Code Generation - Disabled for now
+// openApiGenerate {
+//     generatorName.set("spring")
+//     inputSpec.set("$projectDir/src/main/resources/api/openapi.yaml")
+//     outputDir.set("$buildDir/generated-sources/openapi")
+//     apiPackage.set("com.acme.bida.api")
+//     modelPackage.set("com.acme.bida.model")
+//     configOptions.set(mapOf(
+//         "interfaceOnly" to "true",
+//         "useSpringBoot3" to "true",
+//         "useTags" to "true",
+//         "openApiNullable" to "false"
+//     ))
+// }
 
-tasks.compileJava {
-    dependsOn("openApiGenerate")
-}
+// tasks.compileJava {
+//     dependsOn("openApiGenerate")
+// }
 
-sourceSets {
-    main {
-        java {
-            srcDir("$buildDir/generated-sources/openapi/src/main/java")
-        }
-    }
-}
+// sourceSets {
+//     main {
+//         java {
+//             srcDir("$buildDir/generated-sources/openapi/src/main/java")
+//         }
+//     }
+// }
