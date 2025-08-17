@@ -9,7 +9,7 @@ void main() async {
 
   // Initialize dependency injection
   await DependencyInjection.initialize(
-    baseUrl: 'http://localhost:8080', // Backend API URL
+    baseUrl: 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1', // Backend API URL via ngrok
   );
 
   runApp(const App());

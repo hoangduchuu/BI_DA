@@ -21,7 +21,7 @@ LoginResponse _$LoginResponseFromJson(Map<String, dynamic> json) =>
     LoginResponse(
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String,
-      tokenType: json['tokenType'] as String,
+      tokenType: json['tokenType'] as String?,
       expiresIn: (json['expiresIn'] as num).toInt(),
       userId: json['userId'] as String,
       username: json['username'] as String,

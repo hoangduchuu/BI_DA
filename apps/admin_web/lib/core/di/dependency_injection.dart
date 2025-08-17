@@ -11,7 +11,7 @@ class DependencyInjection {
   static bool _initialized = false;
 
   static Future<void> initialize({
-    String baseUrl = 'http://localhost:8080',
+    String baseUrl = 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1',
   }) async {
     if (_initialized) return;
 

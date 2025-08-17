@@ -10,7 +10,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<List<User>> getUsers() async {
     try {
-      final response = await _apiClient.get<List<dynamic>>('/api/v1/users');
+      final response = await _apiClient.get<List<dynamic>>('/users');
 
       if (response.data == null) {
         throw const DataException('Failed to fetch users: No response data');
@@ -29,7 +29,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<User> getUserById(String id) async {
     try {
-      final response = await _apiClient.get<Map<String, dynamic>>('/api/v1/users/$id');
+      final response = await _apiClient.get<Map<String, dynamic>>('/users/$id');
 
       if (response.data == null) {
         throw NotFoundException('User not found: $id');
@@ -46,7 +46,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<User> createUser(CreateUserRequest request) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
-        '/api/v1/users/create',
+        '/users/create',
         data: request.toJson(),
       );
 
@@ -65,7 +65,7 @@ class UserRepositoryImpl implements UserRepository {
   Future<User> updateUser(String id, Map<String, dynamic> updates) async {
     try {
       final response = await _apiClient.put<Map<String, dynamic>>(
-        '/api/v1/users/$id',
+        '/users/$id',
         data: updates,
       );
 
@@ -83,7 +83,7 @@ class UserRepositoryImpl implements UserRepository {
   @override
   Future<void> deleteUser(String id) async {
     try {
-      await _apiClient.delete('/api/v1/users/$id');
+      await _apiClient.delete('/users/$id');
     } catch (e) {
       if (e is DataException) rethrow;
       throw DataException('Failed to delete user: ${e.toString()}', originalException: e);

@@ -16,6 +16,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _usernameController.text = 'customer1'; // Prefill with a customer username
+    _passwordController.text = 'password123'; // Prefill password
+  }
+
+  @override
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
@@ -176,9 +183,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Text('Customer: customer1 / password123',
+                            Text('Customer 1: customer1 / password123',
                                 style: TextStyle(color: Colors.green.shade600)),
-                            Text('User: manager_d7 / password123',
+                            Text('Customer 2: customer2 / password123',
+                                style: TextStyle(color: Colors.green.shade600)),
+                            Text('Customer 3: customer3 / password123',
                                 style: TextStyle(color: Colors.green.shade600)),
                           ],
                         ),

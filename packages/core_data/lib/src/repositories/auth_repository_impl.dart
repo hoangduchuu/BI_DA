@@ -17,7 +17,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<LoginResponse> login(LoginRequest request) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
-        '/api/v1/auth/login',
+        '/auth/login',
         data: request.toJson(),
       );
 
@@ -49,7 +49,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     try {
       // Call logout endpoint if available
-      await _apiClient.post('/api/v1/auth/logout');
+      await _apiClient.post('/auth/logout');
     } catch (e) {
       // Continue with local logout even if server logout fails
     } finally {
@@ -62,7 +62,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<LoginResponse> refreshToken(String refreshToken) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
-        '/api/v1/auth/refresh',
+        '/auth/refresh',
         data: {'refreshToken': refreshToken},
       );
 
@@ -95,11 +95,8 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User?> getCurrentUser() async {
     try {
-      final userId = await _tokenStorage.getUserId();
-      if (userId == null) return null;
-
       final response = await _apiClient.get<Map<String, dynamic>>(
-        '/api/v1/users/$userId',
+        '/users/me',
       );
 
       if (response.data == null) return null;

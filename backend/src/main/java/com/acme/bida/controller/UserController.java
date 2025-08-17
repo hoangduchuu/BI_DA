@@ -2,10 +2,13 @@ package com.acme.bida.controller;
 
 import com.acme.bida.domain.entity.User;
 import com.acme.bida.repository.UserRepository;
+import com.acme.bida.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,11 +23,39 @@ public class UserController {
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
     
     @GetMapping
     public ResponseEntity<List<User>> getAllUsers() {
         List<User> users = userRepository.findAll();
         return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser() {
+        log.info("getCurrentUser endpoint called");
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Authentication object: {}", authentication);
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            log.warn("No valid authentication found");
+            return ResponseEntity.status(401).build();
+        }
+        
+        String username = authentication.getName();
+        log.info("Username from authentication: {}", username);
+        
+        Optional<User> user = userRepository.findByUsername(username);
+        log.info("User found: {}", user.isPresent());
+        
+        if (user.isPresent()) {
+            log.info("Returning user: {}", user.get().getUsername());
+        } else {
+            log.warn("User not found for username: {}", username);
+        }
+        
+        return user.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
     
     @GetMapping("/{username}")

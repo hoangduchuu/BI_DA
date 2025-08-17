@@ -57,7 +57,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                 // Create authorities based on user role
                                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
                                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                                    user, null, Collections.singletonList(authority));
+                                    username, null, Collections.singletonList(authority));
                                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                                 SecurityContextHolder.getContext().setAuthentication(authToken);
                                 log.debug("Authentication set for user: {} with role: {}", username, user.getRole());

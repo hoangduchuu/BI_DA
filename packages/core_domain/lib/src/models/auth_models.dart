@@ -20,7 +20,7 @@ class LoginRequest {
 class LoginResponse {
   final String accessToken;
   final String refreshToken;
-  final String tokenType;
+  final String? tokenType;
   final int expiresIn;
   final String userId;
   final String username;
@@ -31,7 +31,7 @@ class LoginResponse {
   const LoginResponse({
     required this.accessToken,
     required this.refreshToken,
-    required this.tokenType,
+    this.tokenType,
     required this.expiresIn,
     required this.userId,
     required this.username,
@@ -40,7 +40,25 @@ class LoginResponse {
     this.clubId,
   });
 
-  factory LoginResponse.fromJson(Map<String, dynamic> json) => _$LoginResponseFromJson(json);
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    final userInfo = json['userInfo'] as Map<String, dynamic>?;
+    if (userInfo == null) {
+      throw FormatException('userInfo is required in LoginResponse');
+    }
+    
+    return LoginResponse(
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String,
+      tokenType: json['tokenType'] as String?,
+      expiresIn: json['expiresIn'] as int,
+      userId: userInfo['id'].toString(),
+      username: userInfo['username'] as String,
+      role: userInfo['role'] as String,
+      companyId: userInfo['companyId'].toString(),
+      clubId: userInfo['clubId']?.toString(),
+    );
+  }
+  
   Map<String, dynamic> toJson() => _$LoginResponseToJson(this);
 }
 

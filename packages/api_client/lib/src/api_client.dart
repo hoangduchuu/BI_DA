@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
-  static const String baseUrl = 'http://localhost:8080/api/v1';
+  static const String baseUrl = 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1';
   static const String tokenKey = 'auth_token';
   static const String refreshTokenKey = 'refresh_token';
 

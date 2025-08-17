@@ -10,7 +10,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
   @override
   Future<List<Company>> getCompanies() async {
     try {
-      final response = await _apiClient.get<List<dynamic>>('/api/v1/companies');
+      final response = await _apiClient.get<List<dynamic>>('/companies');
 
       if (response.data == null) {
         throw const DataException('Failed to fetch companies: No response data');
@@ -29,7 +29,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
   @override
   Future<Company> getCompanyById(String id) async {
     try {
-      final response = await _apiClient.get<Map<String, dynamic>>('/api/v1/companies/$id');
+      final response = await _apiClient.get<Map<String, dynamic>>('/companies/$id');
 
       if (response.data == null) {
         throw NotFoundException('Company not found: $id');
@@ -46,7 +46,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
   Future<Company> createCompany(Map<String, dynamic> data) async {
     try {
       final response = await _apiClient.post<Map<String, dynamic>>(
-        '/api/v1/companies',
+        '/companies',
         data: data,
       );
 
@@ -65,7 +65,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
   Future<Company> updateCompany(String id, Map<String, dynamic> updates) async {
     try {
       final response = await _apiClient.put<Map<String, dynamic>>(
-        '/api/v1/companies/$id',
+        '/companies/$id',
         data: updates,
       );
 
@@ -83,7 +83,7 @@ class CompanyRepositoryImpl implements CompanyRepository {
   @override
   Future<void> deleteCompany(String id) async {
     try {
-      await _apiClient.delete('/api/v1/companies/$id');
+      await _apiClient.delete('/companies/$id');
     } catch (e) {
       if (e is DataException) rethrow;
       throw DataException('Failed to delete company: ${e.toString()}', originalException: e);

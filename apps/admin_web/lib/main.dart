@@ -11,7 +11,7 @@ void main() async {
   
   // Initialize dependency injection
   await DependencyInjection.initialize(
-    baseUrl: 'http://localhost:8080', // Backend API URL
+    baseUrl: 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1', // Backend API URL via ngrok
   );
   
   runApp(const BidaAdminWebApp());
@@ -154,7 +154,7 @@ class HomePage extends StatelessWidget {
                       CircleAvatar(
                         backgroundColor: Colors.purple,
                         child: Text(
-                          user?.firstName.substring(0, 1).toUpperCase() ?? 'A',
+                          user?.username.substring(0, 1).toUpperCase() ?? 'A',
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -203,14 +203,14 @@ class HomePage extends StatelessWidget {
         UserAccountsDrawerHeader(
           decoration: const BoxDecoration(color: Colors.purple),
           accountName: Text(
-            '${user?.firstName ?? 'Unknown'} ${user?.lastName ?? 'Admin'}',
+            '${user?.username ?? 'Unknown'} (${user?.role ?? 'Admin'})',
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           accountEmail: Text(user?.email ?? 'No email'),
           currentAccountPicture: CircleAvatar(
             backgroundColor: Colors.white,
             child: Text(
-              user?.firstName.substring(0, 1).toUpperCase() ?? 'A',
+              user?.username.substring(0, 1).toUpperCase() ?? 'A',
               style: const TextStyle(
                 color: Colors.purple,
                 fontSize: 20,
@@ -322,7 +322,7 @@ class HomePage extends StatelessWidget {
               const Icon(Icons.admin_panel_settings, size: 32, color: Colors.purple),
               const SizedBox(width: 16),
               Text(
-                'Welcome, ${user?.firstName ?? 'Admin'}!',
+                'Welcome, ${user?.username ?? 'Admin'}!',
                 style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
             ],
