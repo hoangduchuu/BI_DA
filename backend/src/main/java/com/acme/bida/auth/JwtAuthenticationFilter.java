@@ -34,10 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String requestURI = request.getRequestURI();
         
-        log.debug("Processing request: {} with auth header: {}", requestURI, authHeader != null ? "present" : "null");
+        log.info("JWT Filter processing request: {} with auth header: {}", requestURI, authHeader != null ? "present" : "null");
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.debug("No valid auth header found for request: {}", requestURI);
+            log.info("No valid auth header found for request: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String jwt = authHeader.substring(7);
             final String username = jwtUtil.extractUsername(jwt);
             
-            log.debug("JWT token for user: {}", username);
+            log.info("JWT token for user: {}", username);
             
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (jwtUtil.validateToken(jwt)) {
@@ -69,7 +69,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 log.debug("Username is null or authentication already exists for user: {}", username);
             }
         } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
+            log.error("Cannot set user authentication: {} for request: {}", e.getMessage(), requestURI);
+            e.printStackTrace();
         }
         
         filterChain.doFilter(request, response);

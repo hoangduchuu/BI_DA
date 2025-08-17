@@ -38,7 +38,7 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Public endpoints
+                // Public endpoints (without context path since Spring handles it internally)
                 .requestMatchers("/auth/login").permitAll()
                 .requestMatchers("/auth/register").permitAll()
                 .requestMatchers("/health").permitAll()
@@ -48,13 +48,17 @@ public class SecurityConfig {
                 .requestMatchers("/api-docs/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 
-                // Debug endpoints - only in dev profile
-                .requestMatchers("/users/test/**").hasRole("ADMIN")
-                .requestMatchers("/auth/debug/**").hasRole("ADMIN")
+                // Test utilities - MUST come before more general patterns
+                .requestMatchers("/users/test/hash").permitAll()
+                .requestMatchers("/users/test/password").permitAll()
+                .requestMatchers("/users/test/**").permitAll()
                 
-                // Protected endpoints - require authentication
+                // Debug endpoints - require authentication  
+                .requestMatchers("/auth/debug/**").authenticated()
+                
+                // Protected endpoints - require authentication (more general patterns LAST)
                 .requestMatchers("/companies/**").authenticated()
-                .requestMatchers("/users/**").authenticated()
+                .requestMatchers("/users/**").authenticated()  // Users endpoints require authentication except for test utilities
                 .requestMatchers("/tables/**").authenticated()
                 .requestMatchers("/bookings/**").authenticated()
                 .requestMatchers("/orders/**").authenticated()
@@ -66,7 +70,9 @@ public class SecurityConfig {
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
-                log.warn("Unauthorized access attempt to: {}", request.getRequestURI());
+                String requestPath = request.getRequestURI();
+                String servletPath = request.getServletPath();
+                log.warn("Unauthorized access attempt to: {} (servlet path: {})", requestPath, servletPath);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication required\"}");
             }));
