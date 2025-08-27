@@ -7,6 +7,8 @@ class User {
   final String id;
   final String username;
   final String email;
+  final String? firstName;
+  final String? lastName;
   final String role;
   final String companyId;
   final String? clubId;
@@ -18,6 +20,8 @@ class User {
     required this.id,
     required this.username,
     required this.email,
+    this.firstName,
+    this.lastName,
     required this.role,
     required this.companyId,
     this.clubId,
@@ -33,6 +37,8 @@ class User {
     String? id,
     String? username,
     String? email,
+    String? firstName,
+    String? lastName,
     String? role,
     String? companyId,
     String? clubId,
@@ -44,6 +50,8 @@ class User {
       id: id ?? this.id,
       username: username ?? this.username,
       email: email ?? this.email,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       role: role ?? this.role,
       companyId: companyId ?? this.companyId,
       clubId: clubId ?? this.clubId,

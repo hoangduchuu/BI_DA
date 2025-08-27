@@ -20,11 +20,11 @@ class AuthProvider extends ChangeNotifier {
   // Initialize and check existing authentication
   Future<void> initialize() async {
     _setState(AuthState.loading);
-
+    
     try {
       final authRepo = DependencyInjection.authRepository;
       final isAuth = await authRepo.isAuthenticated();
-
+      
       if (isAuth) {
         _user = await authRepo.getCurrentUser();
         _setState(AuthState.authenticated);
@@ -42,17 +42,17 @@ class AuthProvider extends ChangeNotifier {
     required String password,
   }) async {
     _setState(AuthState.loading);
-
+    
     try {
       final authRepo = DependencyInjection.authRepository;
       final loginRequest = LoginRequest(
         username: username,
         password: password,
       );
-
+      
       await authRepo.login(loginRequest);
       _user = await authRepo.getCurrentUser();
-
+      
       _setState(AuthState.authenticated);
       return true;
     } on AuthException catch (e) {
@@ -73,7 +73,7 @@ class AuthProvider extends ChangeNotifier {
   // Logout method
   Future<void> logout() async {
     _setState(AuthState.loading);
-
+    
     try {
       final authRepo = DependencyInjection.authRepository;
       await authRepo.logout();
@@ -89,7 +89,7 @@ class AuthProvider extends ChangeNotifier {
   // Refresh user data
   Future<void> refreshUser() async {
     if (_state != AuthState.authenticated) return;
-
+    
     try {
       final authRepo = DependencyInjection.authRepository;
       _user = await authRepo.getCurrentUser();

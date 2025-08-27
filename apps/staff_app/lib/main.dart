@@ -7,10 +7,8 @@ import 'app.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dependency injection
-  await DependencyInjection.initialize(
-    baseUrl: 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1', // Backend API URL via ngrok
-  );
+  // Initialize dependency injection with centralized API config
+  await DependencyInjection.initialize();
 
   runApp(const App());
 }

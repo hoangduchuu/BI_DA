@@ -1,5 +1,6 @@
 import 'package:core_data/core_data.dart';
 import 'package:core_domain/core_domain.dart';
+import 'package:api_client/api_client.dart' as api_config;
 
 class DependencyInjection {
   static late final TokenStorage _tokenStorage;
@@ -11,16 +12,16 @@ class DependencyInjection {
   static bool _initialized = false;
 
   static Future<void> initialize({
-    String baseUrl = 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1',
+    String? baseUrl,
   }) async {
     if (_initialized) return;
 
     // Initialize storage
     _tokenStorage = TokenStorage();
 
-    // Initialize API client
+    // Initialize API client using centralized config
     _apiClient = ApiClient(
-      baseUrl: baseUrl,
+      baseUrl: baseUrl ?? api_config.ApiConfig.baseUrl,
       tokenStorage: _tokenStorage,
     );
 

@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_config.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1';
   static const String tokenKey = 'auth_token';
   static const String refreshTokenKey = 'refresh_token';
 
@@ -11,13 +11,10 @@ class ApiClient {
 
   ApiClient._() {
     _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
+      baseUrl: ApiConfig.baseUrl,
+      connectTimeout: ApiConfig.connectTimeout,
+      receiveTimeout: ApiConfig.receiveTimeout,
+      headers: ApiConfig.defaultHeaders,
     ));
 
     _setupInterceptors();
@@ -68,7 +65,7 @@ class ApiClient {
       final refreshToken = _prefs.getString(refreshTokenKey);
       if (refreshToken == null) return false;
 
-      final response = await _dio.post('/auth/refresh', data: {
+      final response = await _dio.post(ApiConfig.refreshTokenUrl, data: {
         'refreshToken': refreshToken,
       });
 
@@ -88,7 +85,7 @@ class ApiClient {
 
   // Authentication
   Future<Map<String, dynamic>> login(String username, String password) async {
-    final response = await _dio.post('/auth/login', data: {
+    final response = await _dio.post(ApiConfig.loginUrl, data: {
       'username': username,
       'password': password,
     });
@@ -107,12 +104,12 @@ class ApiClient {
 
   // Companies
   Future<List<Map<String, dynamic>>> getCompanies() async {
-    final response = await _dio.get('/companies');
+    final response = await _dio.get(ApiConfig.companiesUrl);
     return List<Map<String, dynamic>>.from(response.data);
   }
 
   Future<Map<String, dynamic>> createCompany(Map<String, dynamic> company) async {
-    final response = await _dio.post('/companies', data: company);
+    final response = await _dio.post(ApiConfig.createCompanyUrl, data: company);
     return response.data;
   }
 

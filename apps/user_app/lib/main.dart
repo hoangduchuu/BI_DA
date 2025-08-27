@@ -8,10 +8,8 @@ import 'features/auth/login_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize dependency injection
-  await DependencyInjection.initialize(
-    baseUrl: 'https://3f3d8a3a8bb0.ngrok-free.app/api/v1', // Backend API URL via ngrok
-  );
+  // Initialize dependency injection with centralized API config
+  await DependencyInjection.initialize();
 
   runApp(const BidaUserApp());
 }
@@ -158,7 +156,7 @@ class HomePage extends StatelessWidget {
                   currentAccountPicture: CircleAvatar(
                     backgroundColor: Colors.white,
                     child: Text(
-                      user?.firstName.substring(0, 1).toUpperCase() ?? 'U',
+                      user?.firstName?.substring(0, 1).toUpperCase() ?? 'U',
                       style: const TextStyle(
                         color: Colors.green,
                         fontSize: 20,

@@ -142,7 +142,7 @@ class ApiClient {
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
         final message = error.response?.data?['message'] ?? error.message;
-
+        
         switch (statusCode) {
           case 400:
             return ValidationException(
